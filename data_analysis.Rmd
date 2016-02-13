@@ -1,0 +1,130 @@
+---
+title: "Weather and Storm data analysis"
+author: "Karim.bnm"
+date: "7 février 2016"
+output: html_document
+---
+
+## Introduction
+
+This file covers an exploration of the NOAA storm database which can be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2).
+Documentation about the data is [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf).
+
+This analysis covers two questions :
+
+- Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+- Across the United States, which types of events have the greatest economic consequences?
+
+## Environment
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+
+```
+
+## Data processing
+
+```{r, echo=TRUE, cache=TRUE}
+
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" #url to compressed datafile
+url2 <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf" #url to the data documentation 
+download.file(url, "stormdata.csv.bz2")
+download.file(url2, "stormdatadoc.pdf")
+list.files()
+dt <- read.csv("stormdata.csv.bz2", stringsAsFactors = TRUE, na.strings = c("", "NA"))
+
+```
+
+The file contains `r nrow(dt)` observations along `r ncol(dt)` variables.
+
+First, I proceeded with a few transformations :
+- for the first question, I aggregated the number of casualties along with the type of events. Specifically, the number of victims due to storm events is gathered in the FATALITIES and INJURIES variables. I created a new variable called CASUALTIES which is the sum of FATALITIES and INJURIES grouped by EVENT TYPES. Then, I plotted the 1% type of events with caused the most casualties.
+- for the second question, I recoded the factor levels of PROPDMGEXP and CROPDMGEXP before calculating the total costs per type of events (into a variable called ECOCONS). Then, I plotted the 25% type of events with the greatest economic consequences.
+
+```{r, echo=TRUE}
+#QUESTION 1
+# create a dataframe with EVENT TYPES and CASUALTIES (2 variables)
+dt2 <- dt %>% group_by(EVTYPE) %>% select(EVTYPE, FATALITIES, INJURIES) %>% mutate(CASUALTIES = FATALITIES + INJURIES, FATALITIES = FATALITIES, INJURIES = INJURIES) 
+
+# create a dataframe with the sum of casualties for each EVENT
+dt2.1 <- aggregate(CASUALTIES~EVTYPE, data = dt2, FUN=sum) 
+
+# create a dataframe with the 1% most harmful events
+dt2.2 <- group_by(subset(dt2.1, CASUALTIES>=quantile(dt2.1$CASUALTIES, probs=0.99)), EVTYPE)
+
+#QUESTION 2
+# create a dataframe with damage costs (4 variables) and event types
+
+dt3 <- dt %>% group_by(EVTYPE) %>% select(EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
+
+# recoding PROPDMGEXP and CROPDMGEXP before calculating the total cost per event type
+
+dt3$PROPDMGEXPNUM <- factor(toupper(dt3$PROPDMGEXP), levels = c("B", "M", "K", "H", ""), labels = c(10^9, 10^6, 10^3, 10^2, 0))
+dt3$CROPDMGEXPNUM <- factor(toupper(dt3$CROPDMGEXP), levels = c("B", "M", "K", "" ), labels = c(10^9, 10^6, 10^3, 0))
+
+dt3 <- dt3%>% mutate (PROPDMGEXPCALC = PROPDMG*as.numeric(as.character(PROPDMGEXPNUM)), CROPDMGEXPCALC = CROPDMG*as.numeric(as.character(CROPDMGEXPNUM))) %>% group_by(EVTYPE) %>% summarize(ECOCONS = sum(PROPDMGEXPCALC+CROPDMGEXPCALC))
+
+dt3 <- as.data.frame(dt3)
+
+#compute the 25% event types with the greatest economic consequence 
+dt3.1 <- group_by(subset(dt3, ECOCONS>=quantile(dt3$ECOCONS, probs=0.75, na.rm=T)), EVTYPE)
+
+```
+
+## Most harmful type of events with respect to health population
+
+```{r, echo=TRUE}
+
+# Identification of the most harmful event
+mostharmful <- as.character(dt2.1[which(dt2.1$CASUALTIES==max(dt2.1$CASUALTIES)),1])
+
+# Percentage of casualties due to the most harmful event
+percentage <- round(dt2.1$CASUALTIES[dt2.1$EVTYPE==mostharmful]/sum(dt2.1$CASUALTIES)*100,2)
+
+# Plot the 1% most harmful events
+ggplot(dt2.2, aes(x=EVTYPE, y=CASUALTIES)) + 
+    geom_bar(stat="identity", colour="black", fill="#FFCCDD") + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    xlab("Event type") +
+    ylab("Number of casualties") +
+    scale_y_continuous(breaks=seq(0,100000, 10000)) +
+    ggtitle("1% most harmful type of events")
+
+```
+
+The most harmful type of events with respect to health population is `r mostharmful`.
+
+It represents `r percentage`% of the total casualties.
+
+## Type of events which have the greatest economic consequence
+
+```{r, echo=TRUE}
+
+# Identification of the type of events which have the greatest economic consequences
+
+mostcostly <- as.character(dt3[which(dt3$ECOCONS==max(dt3$ECOCONS, na.rm = TRUE)), 1])
+
+# Percentage of damage cost due to this type of event
+
+percentage2 <- round(dt3$ECOCONS[dt3$EVTYPE==mostcostly]/sum(dt3$ECOCONS, na.rm = T)*100, 2)
+
+# Plot the type of events which amounts for 25% of the total damage cost.
+
+ggplot(dt3.1, aes(x=EVTYPE, y=ECOCONS/10^6)) + 
+    geom_bar(stat="identity", colour="black", fill="#FFCCEE") + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    coord_cartesian(ylim=c(0, 1700)) +
+    xlab("Event Type") +
+    ylab("Damage cost (Millions of $)") +
+    scale_y_continuous(breaks=seq(0,1700, 100)) +
+    ggtitle("Events with the greatest economic consequence")
+
+```
+
+This histogram summarize the type of events with the greatest economic consequence. 
+
+The type of events which have the greatest economic consequence is `r mostcostly`.
+
+It represents `r percentage2` % of the total costs caused by storm events.
