@@ -5,7 +5,7 @@ date: "7 février 2016"
 output: html_document
 ---
 
-## Summary
+# Summary
 
 This file covers an exploration of the NOAA storm database which can be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2).
 Documentation about the data is [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf).
@@ -15,7 +15,7 @@ This analysis covers two questions :
 - Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
 - Across the United States, which types of events have the greatest economic consequences?
 
-The analysis shows that TORNADOES are, in general, the most harmful events with regards to human health, and the disasters having the greatest economic consequence. 
+The analysis shows that TORNADOES are, in general, the most harmful events with regards to human health, and the disasters having the greatest economic consequence.
 
 ## Environment
 
@@ -34,7 +34,6 @@ url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2
 url2 <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf" #url to the data documentation 
 download.file(url, "stormdata.csv.bz2")
 download.file(url2, "stormdatadoc.pdf")
-list.files()
 dt <- read.csv("stormdata.csv.bz2", stringsAsFactors = TRUE, na.strings = c("", "NA"))
 
 ```
@@ -126,7 +125,7 @@ ggplot(dt3.1, aes(x=EVTYPE, y=ECOCONS/10^6)) +
 
 ```
 
-This histogram summarize the type of events with the greatest economic consequence. 
+This histogram summarizes the type of events with the greatest economic consequence. 
 
 The type of events which have the greatest economic consequence is `r mostcostly`.
 
