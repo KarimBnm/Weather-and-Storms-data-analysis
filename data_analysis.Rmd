@@ -5,7 +5,7 @@ date: "7 février 2016"
 output: html_document
 ---
 
-## Introduction
+## Summary
 
 This file covers an exploration of the NOAA storm database which can be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2).
 Documentation about the data is [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf).
@@ -14,6 +14,8 @@ This analysis covers two questions :
 
 - Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
 - Across the United States, which types of events have the greatest economic consequences?
+
+The analysis shows that TORNADOES are, in general, the most harmful events with regards to human health, and the disasters having the greatest economic consequence. 
 
 ## Environment
 
@@ -73,6 +75,7 @@ dt3.1 <- group_by(subset(dt3, ECOCONS>=quantile(dt3$ECOCONS, probs=0.75, na.rm=T
 
 ```
 
+# Results
 ## Most harmful type of events with respect to health population
 
 ```{r, echo=TRUE}
@@ -127,4 +130,4 @@ This histogram summarize the type of events with the greatest economic consequen
 
 The type of events which have the greatest economic consequence is `r mostcostly`.
 
-It represents `r percentage2` % of the total costs caused by storm events.
+It represents `r percentage2` % of the total costs caused by disaster events.
